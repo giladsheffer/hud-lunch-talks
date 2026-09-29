@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Common lunch talks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700&family=Geist+Mono:wght@400&family=Libre+Baskerville:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+      }
+
+      body {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        overflow-x: hidden;
+        background: #f7f4ea;
+        color: #000;
+        font-family: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas,
+          monospace;
+      }
+
+      .card {
+        width: min(32rem, 100%);
+        flex-shrink: 0;
+        overflow: hidden;
+        border-radius: 10px;
+        background: #fff;
+      }
+
+      .label {
+        margin: 0;
+        padding: 36px 28px 0;
+        color: #0000ff;
+        font-size: 0.875rem;
+        text-align: center;
+      }
+
+      .topic {
+        margin: 16px 0 0;
+        padding: 0 28px;
+        min-height: calc(1.45em * 3);
+        color: #000;
+        font-family: "Libre Baskerville", "Frank Ruhl Libre", "Times New Roman",
+          serif;
+        font-size: clamp(1.6rem, 3vw, 2rem);
+        font-weight: 700;
+        line-height: 1.45;
+        text-align: center;
+        overflow-wrap: break-word;
+      }
+
+      button {
+        display: block;
+        width: 100%;
+        margin: 28px 0 0;
+        min-height: 72px;
+        padding: 16px 18px;
+        border: 0;
+        border-radius: 0;
+        background: #0000ff;
+        color: #fff;
+        font-family: inherit;
+        font-size: 0.875rem;
+        cursor: pointer;
+      }
+
+      @media (min-width: 720px) {
+        body {
+          padding: 48px;
+        }
+
+        .label {
+          padding: 48px 40px 0;
+        }
+
+        .topic {
+          padding: 0 40px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card" dir="ltr" lang="en">
+      <p class="label">Common lunch talks</p>
+      <p id="topic" class="topic"></p>
+      <button id="another" type="button" hidden>Another topic</button>
+    </main>
+    <script type="module">
+      import { parseTalks, shuffleDeck, textDirection } from "./topics.js?v=4";
+
+      const topicEl = document.querySelector("#topic");
+      const button = document.querySelector("#another");
+      let talks = [];
+      let deck = [];
+      let last = null;
+
+      function show(index) {
+        last = index;
+        const text = talks[index];
+        const direction = textDirection(text);
+        topicEl.dir = direction;
+        topicEl.lang = direction === "rtl" ? "he" : "en";
+        topicEl.textContent = text;
+        button.hidden = false;
+      }
+
+      function showMessage(text) {
+        topicEl.dir = "ltr";
+        topicEl.lang = "en";
+        topicEl.textContent = text;
+        button.hidden = true;
+      }
+
+      function nextIndex() {
+        if (deck.length === 0) deck = shuffleDeck(talks.length, last, Math.random);
+        return deck.shift();
+      }
+
+      button.addEventListener("click", () => {
+        show(nextIndex());
+      });
+
+      try {
+        const response = await fetch("./topics.txt", { cache: "reload" });
+        if (!response.ok) throw new Error(String(response.status));
+        talks = parseTalks(await response.text());
+        if (talks.length === 0) showMessage("No talks yet.");
+        else show(nextIndex());
+      } catch {
+        showMessage("Could not load the talk list.");
+      }
+    </script>
+  </body>
+</html>
